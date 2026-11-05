@@ -1,0 +1,206 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Dodgeball
+{
+    /// <summary>
+    /// One dodgeball. States: Dead (lying around, can be picked up) -> Held -> Live (thrown, deals damage)
+    /// -> Dead again as soon as it touches anything that is not a character.
+    /// </summary>
+    [RequireComponent(typeof(Rigidbody), typeof(SphereCollider))]
+    public class Ball : MonoBehaviour
+    {
+        public enum BallState { Dead, Held, Live }
+
+        [SerializeField] private Color liveTint = new Color(1f, 0.35f, 0.25f);
+        [SerializeField] private AudioClip hitSound;
+        [SerializeField] private AudioClip bounceSound;
+
+        [Header("Physics")]
+        [Tooltip("Invisible wall on the court lines: how much speed a ball keeps when it bounces off it.")]
+        [Range(0f, 1f)] [SerializeField] private float boundaryBounce = 0.45f;
+        [Tooltip("Drag while a dead ball rolls on the floor (higher = stops sooner).")]
+        [SerializeField] private float rollingDamping = 1.2f;
+        [Tooltip("A rolling dead ball slower than this (m/s) is stopped completely.")]
+        [SerializeField] private float stopSpeed = 0.25f;
+        [Tooltip("Extra gravity multiplier while a dead ball is in the air (makes bounces feel less floaty).")]
+        [SerializeField] private float deadGravityMultiplier = 1.4f;
+
+        /// <summary>All balls in the scene (the AI reads this list).</summary>
+        public static readonly List<Ball> All = new List<Ball>();
+
+        private Rigidbody body;
+        private SphereCollider sphere;
+        private Renderer[] renderers;
+        private MaterialPropertyBlock block;
+        private Collider throwerCollider;
+
+        public BallState State { get; private set; } = BallState.Dead;
+        public BallThrower Thrower { get; private set; }
+        public Rigidbody Body => body;
+        public float Radius => sphere.radius * transform.lossyScale.x;
+
+        private void Awake()
+        {
+            body = GetComponent<Rigidbody>();
+            sphere = GetComponent<SphereCollider>();
+            renderers = GetComponentsInChildren<Renderer>();
+            block = new MaterialPropertyBlock();
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.maxAngularVelocity = 30f;
+            body.sleepThreshold = 0.05f;
+        }
+
+        private void FixedUpdate()
+        {
+            if (State == BallState.Held) return;
+            ArenaBounds arena = ArenaBounds.Instance;
+            if (arena == null) return;
+
+            bool grounded = transform.position.y <= arena.FloorY + Radius + 0.05f;
+
+            // Live balls fly freely; dead balls roll to a stop instead of sliding forever.
+            body.linearDamping = State == BallState.Live ? 0f : (grounded ? rollingDamping : 0.05f);
+            body.angularDamping = grounded ? 1f : 0.05f;
+            if (State == BallState.Dead && !grounded)
+                body.AddForce(Physics.gravity * (deadGravityMultiplier - 1f), ForceMode.Acceleration);
+
+            KeepInsideCourt(arena);
+
+            if (State == BallState.Dead && grounded && body.linearVelocity.sqrMagnitude < stopSpeed * stopSpeed)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+        }
+
+        /// <summary>
+        /// Invisible walls exactly on the court lines (the same area the characters can reach),
+        /// so a ball can never end up somewhere nobody can pick it up.
+        /// </summary>
+        private void KeepInsideCourt(ArenaBounds arena)
+        {
+            float r = Radius;
+            Vector3 pos = body.position;
+            Vector3 vel = body.linearVelocity;
+            Vector3 local = pos - arena.Center;
+            bool hitWall = false;
+
+            hitWall |= ClampAxis(ref pos, ref vel, local, arena.LengthAxis, arena.HalfLength - r);
+            hitWall |= ClampAxis(ref pos, ref vel, local, arena.WidthAxis, arena.HalfWidth - r);
+            if (!hitWall) return;
+
+            body.position = pos;
+            body.linearVelocity = vel;
+            if (State == BallState.Live) { PlaySound(bounceSound, 0.6f); MakeDead(); }
+        }
+
+        private bool ClampAxis(ref Vector3 pos, ref Vector3 vel, Vector3 local, Vector3 axis, float limit)
+        {
+            float d = Vector3.Dot(local, axis);
+            if (Mathf.Abs(d) <= limit) return false;
+
+            float sign = Mathf.Sign(d);
+            pos += axis * (sign * limit - d);                     // push back onto the line
+            float outward = Vector3.Dot(vel, axis) * sign;
+            if (outward > 0f) vel -= axis * (sign * outward * (1f + boundaryBounce)); // reflect + lose energy
+            return true;
+        }
+
+        private void OnEnable() => All.Add(this);
+        private void OnDisable() => All.Remove(this);
+
+        private void Update()
+        {
+            // Respawn if the ball flew out of the arena.
+            if (State != BallState.Held && ArenaBounds.Instance != null && ArenaBounds.Instance.IsOutOfArena(transform.position))
+                Respawn(ArenaBounds.Instance.CenterLinePoint(Random.Range(-0.5f, 0.5f)));
+        }
+
+        /// <summary>Called by BallThrower when it grabs the ball.</summary>
+        public void Attach(BallThrower newHolder, Transform holdPoint)
+        {
+            SetLiveCollisionIgnore(false);
+            Thrower = newHolder;
+            State = BallState.Held;
+            body.isKinematic = true;
+            sphere.enabled = false;
+            transform.SetParent(holdPoint, false);
+            transform.localPosition = Vector3.zero;
+        }
+
+        /// <summary>Called by BallThrower when it throws the ball.</summary>
+        public void Launch(Vector3 velocity, Collider ownCollider)
+        {
+            transform.SetParent(null, true);
+            body.isKinematic = false;
+            sphere.enabled = true;
+            body.linearVelocity = velocity;
+            body.angularVelocity = Random.insideUnitSphere * 10f;
+
+            throwerCollider = ownCollider;
+            SetLiveCollisionIgnore(true); // a ball can never hit its own thrower
+            State = BallState.Live;
+            SetTint(true);
+        }
+
+        public void Respawn(Vector3 position)
+        {
+            if (State == BallState.Held && Thrower != null) Thrower.ReleaseWithoutThrow();
+            transform.SetParent(null, true);
+            body.isKinematic = false;
+            sphere.enabled = true;
+            transform.position = position + Vector3.up * (Radius + 0.5f);
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            MakeDead();
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (State != BallState.Live) { PlaySound(bounceSound, 0.3f); return; }
+
+            Health target = collision.collider.GetComponentInParent<Health>();
+            if (target != null && Thrower != null && target.gameObject != Thrower.gameObject)
+            {
+                if (target.TakeHit()) PlaySound(hitSound, 1f);
+            }
+            else
+            {
+                PlaySound(bounceSound, 0.6f);
+            }
+            // Anything touched (character, floor, wall) turns the ball into a dead ball.
+            MakeDead();
+        }
+
+        private void MakeDead()
+        {
+            State = BallState.Dead;
+            SetLiveCollisionIgnore(false);
+            Thrower = null;
+            SetTint(false);
+        }
+
+        private void SetLiveCollisionIgnore(bool ignore)
+        {
+            if (throwerCollider != null) Physics.IgnoreCollision(sphere, throwerCollider, ignore);
+            if (!ignore) throwerCollider = null;
+        }
+
+        private void SetTint(bool live)
+        {
+            foreach (Renderer r in renderers)
+            {
+                r.GetPropertyBlock(block);
+                block.SetColor("_BaseColor", live ? liveTint : Color.white);
+                r.SetPropertyBlock(block);
+            }
+        }
+
+        private void PlaySound(AudioClip clip, float volume)
+        {
+            if (clip != null) AudioSource.PlayClipAtPoint(clip, transform.position, volume);
+        }
+    }
+}
