@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 26f3121983b33fd47bcf2f8e894a8d2d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Demo/Scripts/TransformsSyncher.cs
+  uploadId: 609224

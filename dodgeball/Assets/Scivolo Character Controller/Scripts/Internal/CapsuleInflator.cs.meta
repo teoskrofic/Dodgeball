@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 678182e315d7053459d1944e52077017
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Scripts/Internal/CapsuleInflator.cs
+  uploadId: 609224

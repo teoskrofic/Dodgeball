@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d63d773a2a3f7794eb909ff0833800ba
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Scripts/Internal/MovementProjector.cs
+  uploadId: 609224

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8b774cc01ffc0bd4e95a354d90e805d0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Scripts/Internal/SweepTestsWithOffset.cs
+  uploadId: 609224

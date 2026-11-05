@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 31cd1de0d46636846b61529ba6f2efe9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Scripts/Internal/StepDetectionUtils.cs
+  uploadId: 609224

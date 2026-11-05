@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ae9be5ad8f4fea54cb89b3e70d3d8d62
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Scripts/MenteBacata.ScivoloCharacterController.asmdef
+  uploadId: 609224

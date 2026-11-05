@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 3ee4ba6bb2e2578409fcbf12f4948b32
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Scripts/Internal/GeometryCasts.cs
+  uploadId: 609224

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a031de2ef66b6114cb6b58dd025c7b2e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Demo/Scenes/Demo Level/LightingData.asset
+  uploadId: 609224

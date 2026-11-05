@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4be65d1e48e19e9489d979cb2addf99e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Demo/Textures/LevelRender.renderTexture
+  uploadId: 609224

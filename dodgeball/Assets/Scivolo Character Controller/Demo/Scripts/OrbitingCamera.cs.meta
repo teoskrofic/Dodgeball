@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d7f530d0c8aedf24a98e3924c7e869c0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170660
+  packageName: Scivolo Character Controller
+  packageVersion: 3.0.0
+  assetPath: Assets/Scivolo Character Controller/Demo/Scripts/OrbitingCamera.cs
+  uploadId: 609224
