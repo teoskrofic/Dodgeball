@@ -27,7 +27,7 @@ namespace Dodgeball.EditorTools
         // Object name prefixes in the MarpaStudio arena that belong to the basketball hoops.
         private static readonly string[] HoopPrefixes = { "Ring", "Net", "FoamPoleFinal", "FoamFinal", "BasketBallRack", "BasketBall" };
 
-        private const float BallDiameter = 0.4f;   // meters (a real dodgeball is ~0.2 m; bigger reads better on screen)
+        private const float BallDiameter = 0.6f;   // meters (a real dodgeball is ~0.2 m; bigger reads better on screen)
         private const float CourtInset = 0.95f;    // use 95 % of the PlayField mesh as playable court
 
         // ---------------------------------------------------------------- materials

@@ -14,6 +14,14 @@ namespace Dodgeball
         [SerializeField] private float centerLineTolerance = 0.4f;
         [SerializeField] private bool autoPickup = true;
 
+        [Header("Holding")]
+        [Tooltip("How far the held ball sinks into the body outline (1 = just touching, lower = tighter).")]
+        [Range(0.5f, 1.2f)] [SerializeField] private float holdTightness = 0.85f;
+        [Tooltip("Sideways offset of the held ball (positive = right hand).")]
+        [SerializeField] private float holdSideOffset = 0.2f;
+        [Tooltip("Height of the held ball relative to the character's center.")]
+        [SerializeField] private float holdHeight = 0.15f;
+
         [Header("Throw")]
         [SerializeField] private float minThrowSpeed = 16f;
         [SerializeField] private float maxThrowSpeed = 28f;
@@ -81,6 +89,7 @@ namespace Dodgeball
 
             HeldBall = best;
             pickupTime = Time.time;
+            PlaceHoldPoint(best.Radius);
             best.Attach(this, holdPoint);
             return true;
         }
@@ -112,6 +121,19 @@ namespace Dodgeball
             HeldBall = null;
             ball.Launch(velocity, ownCollider);
             return true;
+        }
+
+        /// <summary>
+        /// Puts the hold point right against the front of the body (slightly to the throwing side),
+        /// so the held ball touches the character instead of floating next to it, whatever its size.
+        /// </summary>
+        private void PlaceHoldPoint(float ballRadius)
+        {
+            float bodyRadius = 0.5f;
+            if (ownCollider is CharacterController cc) bodyRadius = cc.radius;
+            float scale = Mathf.Max(transform.lossyScale.x, 0.0001f);
+            float forward = (bodyRadius + ballRadius * holdTightness) / scale;
+            holdPoint.localPosition = new Vector3(holdSideOffset / scale, holdHeight / scale, forward);
         }
 
         /// <summary>Speed the ball will have for a given charge (the AI uses this to lead its target).</summary>
