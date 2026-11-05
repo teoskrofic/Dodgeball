@@ -16,11 +16,11 @@ namespace Dodgeball
 
         [Header("Holding")]
         [Tooltip("How far the held ball sinks into the body outline (1 = just touching, lower = tighter).")]
-        [Range(0.5f, 1.2f)] [SerializeField] private float holdTightness = 0.85f;
+        [Range(0.3f, 1.2f)] [SerializeField] private float holdTightness = 0.6f;
         [Tooltip("Sideways offset of the held ball (positive = right hand).")]
-        [SerializeField] private float holdSideOffset = 0.2f;
+        [SerializeField] private float holdSideOffset = 0.12f;
         [Tooltip("Height of the held ball relative to the character's center.")]
-        [SerializeField] private float holdHeight = 0.15f;
+        [SerializeField] private float holdHeight = 0.1f;
 
         [Header("Throw")]
         [SerializeField] private float minThrowSpeed = 16f;

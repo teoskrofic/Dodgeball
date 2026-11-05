@@ -124,17 +124,35 @@ namespace Dodgeball
             SetLiveCollisionIgnore(false);
             Thrower = newHolder;
             State = BallState.Held;
+            // Interpolation on a parented kinematic body makes Unity keep drawing it at its old
+            // physics position, so the ball lags/drifts away from a moving character. Turn it off while held.
+            body.interpolation = RigidbodyInterpolation.None;
             body.isKinematic = true;
             sphere.enabled = false;
             transform.SetParent(holdPoint, false);
             transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+
+        private void LateUpdate()
+        {
+            // Glue the held ball to the hold point every frame, after all movement for this frame.
+            if (State == BallState.Held && transform.parent != null)
+            {
+                transform.localPosition = Vector3.zero;
+                transform.localRotation = Quaternion.identity;
+            }
         }
 
         /// <summary>Called by BallThrower when it throws the ball.</summary>
         public void Launch(Vector3 velocity, Collider ownCollider)
         {
             transform.SetParent(null, true);
+            // Start the physics body exactly where the ball is drawn (at the hand), then fly smoothly.
+            body.position = transform.position;
+            body.rotation = transform.rotation;
             body.isKinematic = false;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
             sphere.enabled = true;
             body.linearVelocity = velocity;
             body.angularVelocity = Random.insideUnitSphere * 10f;
@@ -152,6 +170,8 @@ namespace Dodgeball
             body.isKinematic = false;
             sphere.enabled = true;
             transform.position = position + Vector3.up * (Radius + 0.5f);
+            body.position = transform.position;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
             MakeDead();
