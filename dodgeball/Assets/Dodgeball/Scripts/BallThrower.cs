@@ -95,7 +95,7 @@ namespace Dodgeball
         }
 
         /// <summary>Throws toward a world point. charge01: 0 = weak, 1 = full power.</summary>
-        public bool ThrowAt(Vector3 targetPoint, float charge01)
+        public bool ThrowAt(Vector3 targetPoint, float charge01, float speedMultiplier = 1f)
         {
             if (!CanThrow) return false;
 
@@ -104,7 +104,7 @@ namespace Dodgeball
             if (dir.sqrMagnitude < 0.01f) dir = transform.forward;
             dir.Normalize();
 
-            float speed = Mathf.Lerp(minThrowSpeed, maxThrowSpeed, Mathf.Clamp01(charge01));
+            float speed = Mathf.Lerp(minThrowSpeed, maxThrowSpeed, Mathf.Clamp01(charge01)) * Mathf.Max(speedMultiplier, 0.1f);
 
             // Ballistic arc: pick the vertical speed so the ball arrives at chest height at the target
             // instead of diving into the floor (slow throws) or flying over the target (fast throws).

@@ -29,6 +29,10 @@ namespace Dodgeball
         [SerializeField] private Vector2 throwDelayRange = new Vector2(0.6f, 1.4f);
         [Tooltip("0..1 charge used for throws.")]
         [Range(0f, 1f)] [SerializeField] private float throwPower = 0.6f;
+        [Tooltip("0..1 fraction of the full move speed the AI uses.")]
+        [Range(0.2f, 1f)] [SerializeField] private float moveSpeed01 = 0.8f;
+        [Tooltip("Scales the AI's throw speed (below 1 = slower, easier to dodge).")]
+        [Range(0.5f, 1.2f)] [SerializeField] private float throwSpeedMultiplier = 1f;
 
         [Header("Behaviour")]
         [SerializeField] private float dangerRadius = 1.2f;
@@ -75,17 +79,19 @@ namespace Dodgeball
 
         private void ApplyPreset()
         {
+            // aimError = max sideways miss in meters. A standing target (~0.8 m wide hit zone) is hit
+            // roughly 0.8 / aimError of the time, so aimError is the main knob, then throw speed.
             switch (difficulty)
             {
-                case Difficulty.Easy:
-                    reactionTime = 0.45f; dodgeChance = 0.3f; aimError = 2.2f; prediction = 0f;
-                    throwDelayRange = new Vector2(1.2f, 2.2f); throwPower = 0.35f; break;
-                case Difficulty.Normal:
-                    reactionTime = 0.25f; dodgeChance = 0.6f; aimError = 1.2f; prediction = 0.5f;
-                    throwDelayRange = new Vector2(0.6f, 1.4f); throwPower = 0.6f; break;
-                case Difficulty.Hard:
-                    reactionTime = 0.12f; dodgeChance = 0.85f; aimError = 0.5f; prediction = 0.9f;
-                    throwDelayRange = new Vector2(0.3f, 0.8f); throwPower = 0.9f; break;
+                case Difficulty.Easy:   // slow, sloppy, rarely dodges - easy to beat
+                    reactionTime = 0.6f; dodgeChance = 0.15f; aimError = 3.2f; prediction = 0f;
+                    throwDelayRange = new Vector2(2.2f, 3.8f); throwPower = 0f; throwSpeedMultiplier = 0.7f; moveSpeed01 = 0.55f; break;
+                case Difficulty.Normal: // a challenge, but beatable if you keep moving and dodge
+                    reactionTime = 0.35f; dodgeChance = 0.45f; aimError = 1.6f; prediction = 0.4f;
+                    throwDelayRange = new Vector2(1.2f, 2.2f); throwPower = 0.3f; throwSpeedMultiplier = 0.9f; moveSpeed01 = 0.8f; break;
+                case Difficulty.Hard:   // fast, accurate, leads your movement and dodges a lot
+                    reactionTime = 0.12f; dodgeChance = 0.8f; aimError = 0.6f; prediction = 0.9f;
+                    throwDelayRange = new Vector2(0.4f, 0.9f); throwPower = 0.85f; throwSpeedMultiplier = 1.1f; moveSpeed01 = 1f; break;
             }
         }
 
@@ -147,7 +153,7 @@ namespace Dodgeball
 
             if (Time.time >= throwTime && thrower.CanThrow)
             {
-                thrower.ThrowAt(ComputeAimPoint(), throwPower);
+                thrower.ThrowAt(ComputeAimPoint(), throwPower, throwSpeedMultiplier);
                 state = State.Reposition;
                 nextRepositionTime = 0f;
             }
@@ -167,12 +173,15 @@ namespace Dodgeball
             Vector3 aim = target.position;
             if (targetMotor != null && prediction > 0f)
             {
-                float speed = thrower.SpeedForCharge(throwPower);
+                float speed = thrower.SpeedForCharge(throwPower) * throwSpeedMultiplier;
                 float flightTime = Vector3.Distance(transform.position, target.position) / Mathf.Max(speed, 0.1f);
                 aim += targetMotor.Velocity * flightTime * prediction;
             }
-            Vector2 error = Random.insideUnitCircle * aimError;
-            return aim + new Vector3(error.x, 0f, error.y);
+            // Only sideways error makes a ball miss (an error along the throw line still flies through
+            // the target), so the error is applied perpendicular to the throw direction.
+            Vector3 dir = ArenaBounds.Flat(aim - transform.position).normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, dir);
+            return aim + side * Random.Range(-aimError, aimError);
         }
 
         // ---------- Dodging ----------
@@ -256,7 +265,7 @@ namespace Dodgeball
         private void MoveTowards(Vector3 point, float speed01)
         {
             Vector3 delta = ArenaBounds.Flat(point - transform.position);
-            motor.Move(delta.magnitude < 0.3f ? Vector3.zero : delta.normalized * speed01);
+            motor.Move(delta.magnitude < 0.3f ? Vector3.zero : delta.normalized * (speed01 * moveSpeed01));
         }
 
         private bool ReachedMoveTarget() => ArenaBounds.Flat(moveTarget - transform.position).magnitude < 0.5f;

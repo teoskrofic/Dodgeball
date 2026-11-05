@@ -25,6 +25,15 @@ namespace Dodgeball
         [SerializeField] private GameObject gameOverPanel;
         [SerializeField] private Text gameOverText;
         [SerializeField] private Button restartButton;
+        [SerializeField] private Button menuButton;
+
+        [Header("Difficulty menu")]
+        [SerializeField] private GameObject difficultyPanel;
+        [SerializeField] private Button easyButton;
+        [SerializeField] private Button normalButton;
+        [SerializeField] private Button hardButton;
+        [Tooltip("Optional HUD label that shows the chosen difficulty.")]
+        [SerializeField] private Text difficultyText;
 
         [Header("Look")]
         [SerializeField] private string heart = "♥";
@@ -34,12 +43,29 @@ namespace Dodgeball
         private void Start()
         {
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
-            if (restartButton != null) restartButton.onClick.AddListener(() => GameManager.Instance.Restart());
+            GameManager gm = GameManager.Instance;
+            if (restartButton != null) restartButton.onClick.AddListener(() => gm.Restart());
+            if (menuButton != null) menuButton.onClick.AddListener(() => gm.BackToMenu());
+
+            if (easyButton != null) easyButton.onClick.AddListener(() => gm.StartMatch(AIController.Difficulty.Easy));
+            if (normalButton != null) normalButton.onClick.AddListener(() => gm.StartMatch(AIController.Difficulty.Normal));
+            if (hardButton != null) hardButton.onClick.AddListener(() => gm.StartMatch(AIController.Difficulty.Hard));
 
             player.OnDamaged += _ => RefreshLives();
             opponent.OnDamaged += _ => RefreshLives();
-            if (GameManager.Instance != null) GameManager.Instance.OnGameOver += ShowGameOver;
+            gm.OnGameOver += ShowGameOver;
+            gm.OnMatchStarted += HandleMatchStarted;
+
+            // The match may already have started (Restart skips the menu).
+            if (gm.IsPlaying) HandleMatchStarted();
+            else if (difficultyPanel != null) difficultyPanel.SetActive(true);
             RefreshLives();
+        }
+
+        private void HandleMatchStarted()
+        {
+            if (difficultyPanel != null) difficultyPanel.SetActive(false);
+            if (difficultyText != null) difficultyText.text = GameManager.Instance.CurrentDifficulty.ToString().ToUpper();
         }
 
         private void Update()

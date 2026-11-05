@@ -477,6 +477,103 @@ namespace Dodgeball.EditorTools
             Set(ui, "gameOverPanel", panel.gameObject);
             Set(ui, "gameOverText", goText);
             Set(ui, "restartButton", btn);
+
+            AddDifficultyMenu(ui);
+        }
+
+        // ---------------------------------------------------------------- difficulty menu
+
+        [MenuItem("Tools/Dodgeball/5. Add Difficulty Menu To Open Scene")]
+        public static void AddDifficultyMenuToOpenScene()
+        {
+            UIManager ui = Object.FindFirstObjectByType<UIManager>(FindObjectsInactive.Include);
+            if (ui == null)
+            {
+                EditorUtility.DisplayDialog("Dodgeball", "Open the Dodgeball scene first.", "OK");
+                return;
+            }
+            AddDifficultyMenu(ui);
+            EditorSceneManager.MarkSceneDirty(ui.gameObject.scene);
+            EditorSceneManager.SaveScene(ui.gameObject.scene);
+            Debug.Log("[Dodgeball] Difficulty menu added. Press Play to choose Easy / Normal / Hard.");
+        }
+
+        /// <summary>Creates the Easy/Normal/Hard start panel, a "Menu" button on the game over panel and a HUD label.</summary>
+        private static void AddDifficultyMenu(UIManager ui)
+        {
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            Sprite box = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            RectTransform canvas = ui.GetComponent<RectTransform>();
+
+            // Remove what a previous run created, so this can be run again safely.
+            foreach (string n in new[] { "DifficultyPanel", "DifficultyLabel" })
+            {
+                Transform old = canvas.Find(n);
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+            }
+            Transform gameOver = canvas.Find("GameOverPanel");
+            if (gameOver != null)
+            {
+                Transform oldMenu = gameOver.Find("MenuButton");
+                if (oldMenu != null) Object.DestroyImmediate(oldMenu.gameObject);
+            }
+
+            // HUD label under the player's lives.
+            Text label = MakeText(canvas, "DifficultyLabel", font, 28, TextAnchor.UpperCenter, new Vector2(0.5f, 1), new Vector2(0, -30), new Vector2(400, 50));
+            label.text = "";
+
+            // Full-screen start panel (drawn last so it covers the HUD).
+            Image panel = MakeImage(canvas, "DifficultyPanel", null, new Color(0f, 0f, 0f, 0.75f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            panel.rectTransform.anchorMin = Vector2.zero; panel.rectTransform.anchorMax = Vector2.one;
+            panel.rectTransform.sizeDelta = Vector2.zero;
+            panel.transform.SetAsLastSibling();
+
+            Text title = MakeText(panel.rectTransform, "Title", font, 130, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0, 300), new Vector2(1400, 180));
+            title.text = "DODGEBALL"; title.fontStyle = FontStyle.Bold;
+            MakeText(panel.rectTransform, "Subtitle", font, 46, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0, 170), new Vector2(1200, 70)).text = "Choose difficulty";
+
+            Button easy = MakeMenuButton(panel.rectTransform, "EasyButton", "EASY", "Relaxed - easy to beat", new Color(0.35f, 0.8f, 0.4f), new Vector2(-460, -10), font, box);
+            Button normal = MakeMenuButton(panel.rectTransform, "NormalButton", "NORMAL", "A real challenge", new Color(1f, 0.78f, 0.25f), new Vector2(0, -10), font, box);
+            Button hard = MakeMenuButton(panel.rectTransform, "HardButton", "HARD", "Fast, accurate, dodges a lot", new Color(1f, 0.35f, 0.3f), new Vector2(460, -10), font, box);
+
+            MakeText(panel.rectTransform, "Controls", font, 30, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0, -260), new Vector2(1400, 100)).text =
+                "WASD move  |  Space dodge  |  E pick up  |  Hold & release Left Mouse to throw";
+
+            // "Menu" button next to Restart on the game over screen.
+            Button menu = null;
+            if (gameOver != null)
+            {
+                Transform restart = gameOver.Find("RestartButton");
+                if (restart != null) ((RectTransform)restart).anchoredPosition = new Vector2(-180, -90);
+                Image mImg = MakeImage((RectTransform)gameOver, "MenuButton", box, Color.white, new Vector2(0.5f, 0.5f), new Vector2(180, -90), new Vector2(320, 90));
+                mImg.type = Image.Type.Sliced;
+                menu = mImg.gameObject.AddComponent<Button>();
+                Text mText = MakeText(mImg.rectTransform, "Label", font, 44, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(320, 90));
+                mText.text = "Menu"; mText.color = Color.black;
+            }
+
+            Set(ui, "difficultyPanel", panel.gameObject);
+            Set(ui, "easyButton", easy);
+            Set(ui, "normalButton", normal);
+            Set(ui, "hardButton", hard);
+            Set(ui, "difficultyText", label);
+            if (menu != null) Set(ui, "menuButton", menu);
+        }
+
+        private static Button MakeMenuButton(RectTransform parent, string name, string title, string description, Color color, Vector2 pos, Font font, Sprite box)
+        {
+            Image img = MakeImage(parent, name, box, color, new Vector2(0.5f, 0.5f), pos, new Vector2(400, 200));
+            img.type = Image.Type.Sliced;
+            Button b = img.gameObject.AddComponent<Button>();
+            ColorBlock cb = b.colors;
+            cb.highlightedColor = new Color(1.1f, 1.1f, 1.1f);
+            cb.pressedColor = new Color(0.8f, 0.8f, 0.8f);
+            b.colors = cb;
+            Text t = MakeText(img.rectTransform, "Title", font, 64, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0, 30), new Vector2(400, 90));
+            t.text = title; t.fontStyle = FontStyle.Bold; t.color = Color.black;
+            Text d = MakeText(img.rectTransform, "Description", font, 26, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0, -45), new Vector2(380, 50));
+            d.text = description; d.color = new Color(0.1f, 0.1f, 0.1f);
+            return b;
         }
 
         // ---------------------------------------------------------------- helpers

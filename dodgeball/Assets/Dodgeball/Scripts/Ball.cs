@@ -210,6 +210,9 @@ namespace Dodgeball
 
         private void SetTint(bool live)
         {
+            // Can be called before Awake (e.g. Respawn right after Instantiate on an inactive object).
+            if (block == null) block = new MaterialPropertyBlock();
+            if (renderers == null) renderers = GetComponentsInChildren<Renderer>();
             foreach (Renderer r in renderers)
             {
                 r.GetPropertyBlock(block);
