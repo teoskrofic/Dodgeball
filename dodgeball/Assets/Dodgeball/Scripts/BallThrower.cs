@@ -111,7 +111,7 @@ namespace Dodgeball
             float floorY = ArenaBounds.Instance != null ? ArenaBounds.Instance.FloorY : 0f;
             float distance = ArenaBounds.Flat(targetPoint - from).magnitude;
             float flightTime = Mathf.Max(distance / speed, 0.05f);
-            float g = -Physics.gravity.y;
+            float g = -Physics.gravity.y * (GameManager.Instance != null ? GameManager.Instance.LiveBallGravityScale : 1f);
             float dy = (floorY + aimHeight) - from.y;
             float vy = dy / flightTime + 0.5f * g * flightTime + extraLift;
             vy = Mathf.Clamp(vy, -4f, 8f);

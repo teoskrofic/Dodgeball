@@ -37,6 +37,8 @@ namespace Dodgeball
 
         public BallState State { get; private set; } = BallState.Dead;
         public BallThrower Thrower { get; private set; }
+        /// <summary>Side-wall bounces since this ball was thrown (Side Bounce mode).</summary>
+        public int Bounces { get; private set; }
         public Rigidbody Body => body;
         public float Radius => sphere.radius * transform.lossyScale.x;
 
@@ -65,6 +67,12 @@ namespace Dodgeball
             body.angularDamping = grounded ? 1f : 0.05f;
             if (State == BallState.Dead && !grounded)
                 body.AddForce(Physics.gravity * (deadGravityMultiplier - 1f), ForceMode.Acceleration);
+            // Side Bounce mode: thrown balls fly flatter so they can travel wall to wall.
+            if (State == BallState.Live && GameManager.Instance != null)
+            {
+                float scale = GameManager.Instance.LiveBallGravityScale;
+                if (scale < 1f) body.AddForce(Physics.gravity * (scale - 1f), ForceMode.Acceleration);
+            }
 
             KeepInsideCourt(arena);
 
@@ -78,6 +86,8 @@ namespace Dodgeball
         /// <summary>
         /// Invisible walls exactly on the court lines (the same area the characters can reach),
         /// so a ball can never end up somewhere nobody can pick it up.
+        /// In Side Bounce mode a thrown ball bounces off the two side walls and stays live;
+        /// the back walls (end lines) always kill it.
         /// </summary>
         private void KeepInsideCourt(ArenaBounds arena)
         {
@@ -85,18 +95,37 @@ namespace Dodgeball
             Vector3 pos = body.position;
             Vector3 vel = body.linearVelocity;
             Vector3 local = pos - arena.Center;
-            bool hitWall = false;
 
-            hitWall |= ClampAxis(ref pos, ref vel, local, arena.LengthAxis, arena.HalfLength - r);
-            hitWall |= ClampAxis(ref pos, ref vel, local, arena.WidthAxis, arena.HalfWidth - r);
-            if (!hitWall) return;
+            GameManager.SideBounceRules rules = State == BallState.Live && GameManager.Instance != null
+                ? GameManager.Instance.ActiveBounceRules : null;
+            bool canSideBounce = rules != null && Bounces < rules.maxBounces;
+
+            bool hitEnd = ClampAxis(ref pos, ref vel, local, arena.LengthAxis, arena.HalfLength - r, boundaryBounce);
+            bool hitSide = ClampAxis(ref pos, ref vel, local, arena.WidthAxis, arena.HalfWidth - r, canSideBounce ? 1f : boundaryBounce);
+            if (!hitEnd && !hitSide) return;
+
+            if (State == BallState.Live)
+            {
+                if (hitEnd || !canSideBounce)
+                {
+                    PlaySound(bounceSound, 0.6f);
+                    MakeDead();
+                }
+                else
+                {
+                    // Clean bank shot: mirror the horizontal direction, lose a bit of speed, stay dangerous.
+                    Vector3 flat = ArenaBounds.Flat(vel) * rules.speedKept;
+                    vel = flat + Vector3.up * vel.y;
+                    Bounces++;
+                    PlaySound(bounceSound, 0.8f);
+                }
+            }
 
             body.position = pos;
             body.linearVelocity = vel;
-            if (State == BallState.Live) { PlaySound(bounceSound, 0.6f); MakeDead(); }
         }
 
-        private bool ClampAxis(ref Vector3 pos, ref Vector3 vel, Vector3 local, Vector3 axis, float limit)
+        private static bool ClampAxis(ref Vector3 pos, ref Vector3 vel, Vector3 local, Vector3 axis, float limit, float bounciness)
         {
             float d = Vector3.Dot(local, axis);
             if (Mathf.Abs(d) <= limit) return false;
@@ -104,7 +133,7 @@ namespace Dodgeball
             float sign = Mathf.Sign(d);
             pos += axis * (sign * limit - d);                     // push back onto the line
             float outward = Vector3.Dot(vel, axis) * sign;
-            if (outward > 0f) vel -= axis * (sign * outward * (1f + boundaryBounce)); // reflect + lose energy
+            if (outward > 0f) vel -= axis * (sign * outward * (1f + bounciness)); // reflect (1 = no energy lost)
             return true;
         }
 
@@ -160,6 +189,7 @@ namespace Dodgeball
             throwerCollider = ownCollider;
             SetLiveCollisionIgnore(true); // a ball can never hit its own thrower
             State = BallState.Live;
+            Bounces = 0;
             SetTint(true);
         }
 
@@ -197,6 +227,7 @@ namespace Dodgeball
         private void MakeDead()
         {
             State = BallState.Dead;
+            Bounces = 0;
             SetLiveCollisionIgnore(false);
             Thrower = null;
             SetTint(false);

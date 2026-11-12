@@ -34,6 +34,9 @@ namespace Dodgeball
         [Tooltip("Scales the AI's throw speed (below 1 = slower, easier to dodge).")]
         [Range(0.5f, 1.2f)] [SerializeField] private float throwSpeedMultiplier = 1f;
 
+        [Tooltip("Side Bounce mode: chance (0..1) to bank the throw off a side wall. Set by the GameManager.")]
+        [Range(0f, 1f)] [SerializeField] private float bankShotChance = 0f;
+
         [Header("Behaviour")]
         [SerializeField] private float dangerRadius = 1.2f;
         [SerializeField] private float lookAheadTime = 0.8f;
@@ -53,7 +56,9 @@ namespace Dodgeball
         private float sidestepUntil;
         // Balls we already decided about, so each ball only gets one dodge roll.
         private readonly Dictionary<Ball, float> pendingDodges = new Dictionary<Ball, float>();
-        private readonly HashSet<Ball> judgedBalls = new HashSet<Ball>();
+        // Value = the ball's bounce count when judged; a side-wall bounce changes its path, so it is judged again.
+        private readonly Dictionary<Ball, int> judgedBalls = new Dictionary<Ball, int>();
+        private readonly List<Ball> forgetBuffer = new List<Ball>();
 
         private void OnValidate() => ApplyPreset();
 
@@ -76,6 +81,8 @@ namespace Dodgeball
             difficulty = newDifficulty;
             ApplyPreset();
         }
+
+        public void SetBankShotChance(float chance) => bankShotChance = Mathf.Clamp01(chance);
 
         private void ApplyPreset()
         {
@@ -181,7 +188,17 @@ namespace Dodgeball
             // the target), so the error is applied perpendicular to the throw direction.
             Vector3 dir = ArenaBounds.Flat(aim - transform.position).normalized;
             Vector3 side = Vector3.Cross(Vector3.up, dir);
-            return aim + side * Random.Range(-aimError, aimError);
+            aim += side * Random.Range(-aimError, aimError);
+
+            // Side Bounce mode: sometimes bank it off the side wall nearest the target.
+            ArenaBounds arena = ArenaBounds.Instance;
+            if (arena != null && bankShotChance > 0f && Random.value < bankShotChance)
+            {
+                int wall = Vector3.Dot(target.position - arena.Center, arena.WidthAxis) >= 0f ? 1 : -1;
+                float inset = thrower.HeldBall != null ? thrower.HeldBall.Radius : 0.3f;
+                aim = arena.MirrorAcrossSideWall(aim, wall, inset);
+            }
+            return aim;
         }
 
         // ---------- Dodging ----------
@@ -191,10 +208,11 @@ namespace Dodgeball
             // 1) Notice new dangerous balls and roll once whether we will react to them.
             foreach (Ball ball in Ball.All)
             {
-                if (ball.State != Ball.BallState.Live || ball.Thrower == thrower || judgedBalls.Contains(ball)) continue;
+                if (ball.State != Ball.BallState.Live || ball.Thrower == thrower) continue;
+                if (judgedBalls.TryGetValue(ball, out int judgedAtBounce) && judgedAtBounce == ball.Bounces) continue;
                 if (!IsThreat(ball, out _)) continue;
 
-                judgedBalls.Add(ball);
+                judgedBalls[ball] = ball.Bounces;
                 if (Random.value <= dodgeChance) pendingDodges[ball] = Time.time + reactionTime;
             }
 
@@ -218,7 +236,10 @@ namespace Dodgeball
             if (done != null) pendingDodges.Remove(done);
 
             // Forget balls that are no longer live so they can be judged again on the next throw.
-            judgedBalls.RemoveWhere(b => b == null || b.State != Ball.BallState.Live);
+            forgetBuffer.Clear();
+            foreach (Ball b in judgedBalls.Keys)
+                if (b == null || b.State != Ball.BallState.Live) forgetBuffer.Add(b);
+            foreach (Ball b in forgetBuffer) judgedBalls.Remove(b);
         }
 
         /// <summary>Predicts whether a ball will pass within dangerRadius soon. 'away' = best dodge direction.</summary>

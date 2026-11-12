@@ -74,6 +74,17 @@ namespace Dodgeball
         /// <summary>Spawn point in the middle of a half.</summary>
         public Vector3 SpawnPoint(int side) => Center + LengthAxis * (side * halfLength * 0.5f);
 
+        /// <summary>
+        /// Mirrors a point across a side wall (wallSign -1 or +1), moved 'inset' inside the court.
+        /// Throwing at the mirrored point makes the ball bank off that wall and arrive at the original point.
+        /// </summary>
+        public Vector3 MirrorAcrossSideWall(Vector3 worldPos, int wallSign, float inset)
+        {
+            float wall = wallSign * (halfWidth - inset);
+            float across = Vector3.Dot(worldPos - Center, WidthAxis);
+            return worldPos + WidthAxis * (2f * (wall - across));
+        }
+
         public bool IsOutOfArena(Vector3 worldPos)
         {
             Vector3 local = worldPos - Center;

@@ -35,6 +35,16 @@ namespace Dodgeball
         [Tooltip("Optional HUD label that shows the chosen difficulty.")]
         [SerializeField] private Text difficultyText;
 
+        [Header("Game mode tabs (built at runtime from the Easy button)")]
+        [SerializeField] private Vector2 modeTabSize = new Vector2(330, 80);
+        [SerializeField] private float modeTabY = -165f;
+        [SerializeField] private Color modeSelectedColor = Color.white;
+        [SerializeField] private Color modeUnselectedColor = new Color(0.45f, 0.45f, 0.45f);
+
+        private Button classicTab;
+        private Button sideBounceTab;
+        private readonly string[] classicDescriptions = new string[3];
+
         [Header("Look")]
         [SerializeField] private string heart = "♥";
         [SerializeField] private Color readyColor = new Color(0.3f, 0.9f, 0.4f);
@@ -46,6 +56,8 @@ namespace Dodgeball
             GameManager gm = GameManager.Instance;
             if (restartButton != null) restartButton.onClick.AddListener(() => gm.Restart());
             if (menuButton != null) menuButton.onClick.AddListener(() => gm.BackToMenu());
+
+            BuildModeTabs();
 
             if (easyButton != null) easyButton.onClick.AddListener(() => gm.StartMatch(AIController.Difficulty.Easy));
             if (normalButton != null) normalButton.onClick.AddListener(() => gm.StartMatch(AIController.Difficulty.Normal));
@@ -65,7 +77,88 @@ namespace Dodgeball
         private void HandleMatchStarted()
         {
             if (difficultyPanel != null) difficultyPanel.SetActive(false);
-            if (difficultyText != null) difficultyText.text = GameManager.Instance.CurrentDifficulty.ToString().ToUpper();
+            GameManager gm = GameManager.Instance;
+            if (difficultyText != null)
+            {
+                string mode = gm.CurrentMode == GameManager.GameMode.SideBounce ? "SIDE BOUNCE  -  " : "";
+                difficultyText.text = mode + gm.CurrentDifficulty.ToString().ToUpper();
+            }
+        }
+
+        // ---------- Game mode tabs ----------
+
+        /// <summary>Adds CLASSIC / SIDE BOUNCE tabs under the difficulty buttons by cloning the Easy button.</summary>
+        private void BuildModeTabs()
+        {
+            if (difficultyPanel == null || easyButton == null) return;
+
+            Button[] difficultyButtons = { easyButton, normalButton, hardButton };
+            for (int i = 0; i < 3; i++)
+            {
+                Text d = DescriptionOf(difficultyButtons[i]);
+                classicDescriptions[i] = d != null ? d.text : "";
+            }
+
+            Transform subtitle = difficultyPanel.transform.Find("Subtitle");
+            if (subtitle != null && subtitle.TryGetComponent(out Text sub)) sub.text = "Choose mode and difficulty";
+
+            classicTab = MakeModeTab("ClassicTab", "CLASSIC", -modeTabSize.x * 0.5f - 15f);
+            sideBounceTab = MakeModeTab("SideBounceTab", "SIDE BOUNCE", modeTabSize.x * 0.5f + 15f);
+            classicTab.onClick.AddListener(() => SelectMode(GameManager.GameMode.Classic));
+            sideBounceTab.onClick.AddListener(() => SelectMode(GameManager.GameMode.SideBounce));
+            SelectMode(GameManager.Instance.SelectedMode);
+        }
+
+        private Button MakeModeTab(string name, string label, float x)
+        {
+            GameObject go = Instantiate(easyButton.gameObject, easyButton.transform.parent);
+            go.name = name;
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchoredPosition = new Vector2(x, modeTabY);
+            rt.sizeDelta = modeTabSize;
+
+            Transform title = go.transform.Find("Title");
+            if (title != null)
+            {
+                RectTransform trt = (RectTransform)title;
+                trt.anchoredPosition = Vector2.zero;
+                trt.sizeDelta = modeTabSize;
+                Text t = title.GetComponent<Text>();
+                t.text = label;
+                t.fontSize = 40;
+            }
+            Transform desc = go.transform.Find("Description");
+            if (desc != null) desc.gameObject.SetActive(false);
+
+            Button b = go.GetComponent<Button>();
+            b.onClick.RemoveAllListeners();
+            return b;
+        }
+
+        private void SelectMode(GameManager.GameMode mode)
+        {
+            GameManager gm = GameManager.Instance;
+            gm.SelectedMode = mode;
+            bool bounce = mode == GameManager.GameMode.SideBounce;
+
+            if (classicTab != null) classicTab.image.color = bounce ? modeUnselectedColor : modeSelectedColor;
+            if (sideBounceTab != null) sideBounceTab.image.color = bounce ? modeSelectedColor : modeUnselectedColor;
+
+            // Difficulty buttons explain what each level means in the chosen mode.
+            Button[] difficultyButtons = { easyButton, normalButton, hardButton };
+            AIController.Difficulty[] levels = { AIController.Difficulty.Easy, AIController.Difficulty.Normal, AIController.Difficulty.Hard };
+            for (int i = 0; i < 3; i++)
+            {
+                Text d = DescriptionOf(difficultyButtons[i]);
+                if (d != null) d.text = bounce ? gm.GetSideBounceRules(levels[i]).description : classicDescriptions[i];
+            }
+        }
+
+        private static Text DescriptionOf(Button b)
+        {
+            if (b == null) return null;
+            Transform t = b.transform.Find("Description");
+            return t != null ? t.GetComponent<Text>() : null;
         }
 
         private void Update()
