@@ -150,7 +150,7 @@ namespace Dodgeball
             for (int i = 0; i < 3; i++)
             {
                 Text d = DescriptionOf(difficultyButtons[i]);
-                if (d != null) d.text = bounce ? gm.GetSideBounceRules(levels[i]).description : classicDescriptions[i];
+                if (d != null) d.text = bounce ? GameManager.SideBounceDescription(levels[i]) : classicDescriptions[i];
             }
         }
 

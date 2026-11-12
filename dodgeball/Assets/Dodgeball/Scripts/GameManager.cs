@@ -22,14 +22,12 @@ namespace Dodgeball
             [Range(0.3f, 1f)] public float speedKept = 0.9f;
             [Tooltip("Chance (0..1) that the AI throws a bank shot off a side wall instead of a straight throw.")]
             [Range(0f, 1f)] public float aiBankShotChance = 0.35f;
-            [Tooltip("Text shown on the difficulty button.")]
-            public string description = "";
 
             public SideBounceRules() { }
 
-            public SideBounceRules(int bounces, float kept, float bankChance, string text)
+            public SideBounceRules(int bounces, float kept, float bankChance)
             {
-                maxBounces = bounces; speedKept = kept; aiBankShotChance = bankChance; description = text;
+                maxBounces = bounces; speedKept = kept; aiBankShotChance = bankChance;
             }
         }
 
@@ -47,9 +45,9 @@ namespace Dodgeball
         [Header("Side Bounce mode")]
         [Tooltip("Thrown balls in Side Bounce mode feel only this much gravity, so they fly flat enough to bank off the walls.")]
         [Range(0.1f, 1f)] [SerializeField] private float sideBounceGravityScale = 0.35f;
-        [SerializeField] private SideBounceRules sideBounceEasy = new SideBounceRules(1, 0.75f, 0f, "1 bounce - AI throws straight");
-        [SerializeField] private SideBounceRules sideBounceNormal = new SideBounceRules(2, 0.9f, 0.35f, "2 bounces - AI tries bank shots");
-        [SerializeField] private SideBounceRules sideBounceHard = new SideBounceRules(4, 1f, 0.7f, "4 bounces - AI loves bank shots");
+        [SerializeField] private SideBounceRules sideBounceEasy = new SideBounceRules(1, 0.75f, 0f);
+        [SerializeField] private SideBounceRules sideBounceNormal = new SideBounceRules(2, 0.9f, 0.35f);
+        [SerializeField] private SideBounceRules sideBounceHard = new SideBounceRules(4, 1f, 0.7f);
 
         [Header("Physics layers (created by the scene builder)")]
         [SerializeField] private string ballLayer = "Ball";
@@ -79,6 +77,17 @@ namespace Dodgeball
 
         /// <summary>Gravity multiplier for thrown (live) balls in the running match.</summary>
         public float LiveBallGravityScale => ActiveBounceRules != null ? sideBounceGravityScale : 1f;
+
+        /// <summary>Text shown on the difficulty buttons when Side Bounce mode is selected.</summary>
+        public static string SideBounceDescription(AIController.Difficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case AIController.Difficulty.Easy: return "AI throws straight";
+                case AIController.Difficulty.Hard: return "AI loves bank shots";
+                default: return "AI tries bank shots";
+            }
+        }
 
         public SideBounceRules GetSideBounceRules(AIController.Difficulty difficulty)
         {
