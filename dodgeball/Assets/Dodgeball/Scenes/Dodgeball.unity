@@ -7100,7 +7100,7 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 46
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -19838,7 +19838,7 @@ MonoBehaviour:
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 64
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -28684,6 +28684,10 @@ MonoBehaviour:
   normalButton: {fileID: 854790458}
   hardButton: {fileID: 27296020}
   difficultyText: {fileID: 327009459}
+  modeTabSize: {x: 330, y: 80}
+  modeTabY: -165
+  modeSelectedColor: {r: 1, g: 1, b: 1, a: 1}
+  modeUnselectedColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
   heart: "\u2665"
   readyColor: {r: 0.3, g: 0.9, b: 0.4, a: 1}
   coolingColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
@@ -33065,7 +33069,7 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 44
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -33603,12 +33607,14 @@ MonoBehaviour:
   target: {fileID: 1461871016}
   difficulty: 1
   reactionTime: 0.35
-  dodgeChance: 0.4
-  aimError: 1.7
-  prediction: 0.35
-  throwDelayRange: {x: 1.1, y: 2.2}
-  throwPower: 0.35
+  dodgeChance: 0.45
+  aimError: 1.6
+  prediction: 0.4
+  throwDelayRange: {x: 1.2, y: 2.2}
+  throwPower: 0.3
   moveSpeed01: 0.8
+  throwSpeedMultiplier: 0.9
+  bankShotChance: 0
   dangerRadius: 1.2
   lookAheadTime: 0.8
   repositionInterval: {x: 1.5, y: 3}
@@ -42289,7 +42295,7 @@ MonoBehaviour:
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 64
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -60058,7 +60064,7 @@ MonoBehaviour:
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 64
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -60202,6 +60208,19 @@ MonoBehaviour:
   ballCount: 3
   showDifficultyMenu: 1
   aiDifficulty: 1
+  sideBounceGravityScale: 0.35
+  sideBounceEasy:
+    maxBounces: 1
+    speedKept: 0.75
+    aiBankShotChance: 0
+  sideBounceNormal:
+    maxBounces: 2
+    speedKept: 0.9
+    aiBankShotChance: 0.35
+  sideBounceHard:
+    maxBounces: 4
+    speedKept: 1
+    aiBankShotChance: 0.7
   ballLayer: Ball
   dividerLayer: Divider
 --- !u!1001 &1206424936
@@ -62825,7 +62844,7 @@ MonoBehaviour:
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 130
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
